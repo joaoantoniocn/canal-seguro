@@ -7,6 +7,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.concurrent.SynchronousQueue;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
@@ -26,6 +27,8 @@ public class Conexao {
 			client = new Socket(ip, porta);
 			output = new ObjectOutputStream(client.getOutputStream());
 			input = new ObjectInputStream(client.getInputStream());
+			
+			System.out.println("Conexao estabelecida com sucesso!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -41,6 +44,8 @@ public class Conexao {
 		}
 		chavePrivada = assimetrica.generateKeyPair().getPrivate();
 		chavePublica = assimetrica.generateKeyPair().getPublic();
+		
+		System.out.println("Chaves publica e privadas criadas com sucesso!");
 	}
 
 	/**
@@ -64,6 +69,7 @@ public class Conexao {
 	private void enviarChavePublica() {
 		try {
 			output.writeObject(chavePublica);
+			System.out.println("Chave Publica enviada...");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -73,6 +79,7 @@ public class Conexao {
 	private void receberChavePublicaDestinatario() {
 		try {
 			chavePublicaDestinatario = (PublicKey) input.readObject();
+			System.out.println("Chave Publica destinatario recebida com sucesso!");
 			System.out.println("Chave publica destinatario: " + chavePublicaDestinatario.toString());
 		} catch (ClassNotFoundException | IOException e) {
 			// TODO Auto-generated catch block
@@ -99,6 +106,7 @@ public class Conexao {
 	public void fecharConexao() {
 		try {
 			client.close();
+			System.out.println("Conexao fechada com sucesso!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
