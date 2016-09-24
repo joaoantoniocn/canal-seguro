@@ -2,6 +2,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -18,6 +19,7 @@ public class Conexao {
 	private static PublicKey chavePublica;
 
 	private Socket client;
+	private ServerSocket server;
 	private PublicKey chavePublicaDestinatario;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
@@ -25,6 +27,20 @@ public class Conexao {
 	public Conexao(String ip, int porta) {
 		try {
 			client = new Socket(ip, porta);
+			output = new ObjectOutputStream(client.getOutputStream());
+			input = new ObjectInputStream(client.getInputStream());
+			
+			System.out.println("Conexao estabelecida com sucesso!");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public Conexao(int porta) {
+		try {
+			server = new ServerSocket(7022);
+			client = server.accept();
 			output = new ObjectOutputStream(client.getOutputStream());
 			input = new ObjectInputStream(client.getInputStream());
 			

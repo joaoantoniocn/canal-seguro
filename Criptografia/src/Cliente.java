@@ -50,8 +50,8 @@ public class Cliente {
 //		Scanner scanner = new Scanner(System.in);
 		
 		// --- iniciando a conexao ---
-		Conexao conexao = new Conexao("192.168.0.107", 7021);
-		conexao.init();
+		Conexao conexao = new Conexao("192.168.0.107", 5000);
+		//conexao.init();
 		// cliente iniciando conexao
 		conexao.iniciarConexao();
 		
