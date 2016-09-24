@@ -19,7 +19,7 @@ public class Conexao {
 	private Socket client;
 	private PublicKey chavePublicaDestinatario;
 	private ObjectOutputStream output;
-	ObjectInputStream input;
+	private ObjectInputStream input;
 	
 	public Conexao(String ip, int porta){
 		try {
@@ -53,6 +53,15 @@ public class Conexao {
 		}
 	}
 	
+	private void receberChavePublicaDestinatario(){
+		try {
+			chavePublicaDestinatario = (PublicKey) input.readObject();
+		} catch (ClassNotFoundException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	private String convertToString(Object obj) {
 		try {
 			String str;
@@ -68,4 +77,13 @@ public class Conexao {
 		}
 		return null;
 	} 
+	
+	public void fecharConexao(){
+		try {
+			client.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }
