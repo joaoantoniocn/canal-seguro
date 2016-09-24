@@ -52,25 +52,28 @@ public class Cliente {
 		// // output.writeObject(new Package(encr, ba.length));
 
 		// --- iniciando a conexao ---
-		Conexao conexao = new Conexao(5000);
+		// cliente
+		Conexao conexao = new Conexao("192.168.0.107", 5000);
+		
+		// servidor 
+		//Conexao conexao = new Conexao(5000);
 		Conexao.init();
 		// cliente iniciando conexao
-		//conexao.iniciarConexao();
+		conexao.iniciarConexao();
 
 		// servidor esperando conexao
-		conexao.esperarConexao();
+		// conexao.esperarConexao();
 
 		// ---
 		Scanner scanner = new Scanner(System.in);
 		String msg = "";
 		String resposta = "";
 		while (!msg.equals("fechar")) {
-			resposta = conexao.receberMensagem();
-			System.out.println("Servidor: " + resposta);
 			msg = scanner.nextLine();
 			
 			conexao.enviarMensagem(msg);
-			
+			resposta = conexao.receberMensagem();
+			System.out.println("Servidor: " + resposta);
 		}
 
 		conexao.fecharConexao();
@@ -78,5 +81,5 @@ public class Cliente {
 		//
 		// Usuario testeModificado = (Usuario) input.readObject();
 		// System.out.println(testeModificado.getNome());
-	} // main
-} // classe
+	} 
+} 

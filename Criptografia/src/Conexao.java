@@ -12,6 +12,10 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.concurrent.SynchronousQueue;
 
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
+
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 public class Conexao {
@@ -80,9 +84,29 @@ public class Conexao {
 	 *  
 	 */
 	public void enviarMensagem(String msg){
+		
+		byte[] msgBytes = null;
+		byte[] msgCriptografada = null;
+		
+		
+		AES abc = new AES();
+		abc.setPadding(new PKCS7Padding());
+		abc.setKey(chavePublicaDestinatario.getEncoded());
+		
 		try {
-			output.writeObject(msg);
+			
+			msgBytes = msg.getBytes("UTF-8");
+			msgCriptografada = abc.encrypt(msgBytes);
+			Base64.encode(msgCriptografada);
+			
+			output.writeObject(new Package(msgCriptografada, msgBytes.length));
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DataLengthException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidCipherTextException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
