@@ -11,17 +11,17 @@ import java.security.PublicKey;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 public class Conexao {
-	
+
 	private static KeyPairGenerator assimetrica;
 	private static PrivateKey chavePrivada;
 	private static PublicKey chavePublica;
-	
+
 	private Socket client;
 	private PublicKey chavePublicaDestinatario;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-	
-	public Conexao(String ip, int porta){
+
+	public Conexao(String ip, int porta) {
 		try {
 			client = new Socket(ip, porta);
 			output = new ObjectOutputStream(client.getOutputStream());
@@ -31,9 +31,8 @@ public class Conexao {
 			e.printStackTrace();
 		}
 	}
-	
-	
-	public static void init(){
+
+	public static void init() {
 		try {
 			assimetrica = KeyPairGenerator.getInstance("AES");
 		} catch (NoSuchAlgorithmException e) {
@@ -43,8 +42,26 @@ public class Conexao {
 		chavePrivada = assimetrica.generateKeyPair().getPrivate();
 		chavePublica = assimetrica.generateKeyPair().getPublic();
 	}
-	
-	private void enviarChavePublica(){
+
+	/**
+	 * Inicia a conexao fazendo a troca de chaves publicas
+	 */
+	public void iniciarConexao() {
+		enviarChavePublica();
+		receberChavePublicaDestinatario();
+
+	}
+
+	/**
+	 * Espera uma conexao, primeiro recebe a chave publica de quem ta tentando se conectar
+	 * e depois envia sua propria chave publica
+	 */
+	public void esperarConexao() {
+		receberChavePublicaDestinatario();
+		enviarChavePublica();
+	}
+
+	private void enviarChavePublica() {
 		try {
 			output.writeObject(chavePublica);
 		} catch (IOException e) {
@@ -52,16 +69,17 @@ public class Conexao {
 			e.printStackTrace();
 		}
 	}
-	
-	private void receberChavePublicaDestinatario(){
+
+	private void receberChavePublicaDestinatario() {
 		try {
 			chavePublicaDestinatario = (PublicKey) input.readObject();
+			System.out.println("Chave publica destinatario: " + chavePublicaDestinatario.toString());
 		} catch (ClassNotFoundException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
+
 	private String convertToString(Object obj) {
 		try {
 			String str;
@@ -76,9 +94,9 @@ public class Conexao {
 			e.printStackTrace();
 		}
 		return null;
-	} 
-	
-	public void fecharConexao(){
+	}
+
+	public void fecharConexao() {
 		try {
 			client.close();
 		} catch (IOException e) {
