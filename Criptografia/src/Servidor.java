@@ -18,8 +18,7 @@ public class Servidor {
 		// --- iniciando a conexao ---
 		Conexao conexao = new Conexao(5000);
 		Conexao.init();
-		// cliente iniciando conexao
-		//conexao.iniciarConexao();
+		
 
 		// servidor esperando conexao
 		conexao.esperarConexao();
@@ -30,7 +29,10 @@ public class Servidor {
 		String resposta = "";
 		while (!msg.equals("fechar")) {
 			resposta = conexao.receberMensagem();
-			System.out.println("Servidor: " + resposta);
+			
+			
+			
+			System.out.println("Cliente: " + resposta);
 			msg = scanner.nextLine();
 			
 			conexao.enviarMensagem(msg);
