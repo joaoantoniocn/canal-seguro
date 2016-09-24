@@ -6,8 +6,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.concurrent.SynchronousQueue;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
@@ -39,7 +41,7 @@ public class Conexao {
 	
 	public Conexao(int porta) {
 		try {
-			server = new ServerSocket(7022);
+			server = new ServerSocket(porta);
 			client = server.accept();
 			output = new ObjectOutputStream(client.getOutputStream());
 			input = new ObjectInputStream(client.getInputStream());
@@ -53,8 +55,10 @@ public class Conexao {
 
 	public static void init() {
 		try {
-			assimetrica = KeyPairGenerator.getInstance("AES");
-		} catch (NoSuchAlgorithmException e) {
+			assimetrica = KeyPairGenerator.getInstance("DSA");
+			SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+			assimetrica.initialize(1024, random);
+		} catch (NoSuchAlgorithmException | NoSuchProviderException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -70,9 +74,33 @@ public class Conexao {
 	public void iniciarConexao() {
 		enviarChavePublica();
 		receberChavePublicaDestinatario();
-
 	}
 
+	/**
+	 *  
+	 */
+	public void enviarMensagem(String msg){
+		try {
+			output.writeObject(msg);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public String receberMensagem(){
+		try {
+			return (String) input.readObject();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "Problema ao receber mensagem!";
+	}
+	
 	/**
 	 * Espera uma conexao, primeiro recebe a chave publica de quem ta tentando se conectar
 	 * e depois envia sua propria chave publica
@@ -86,6 +114,7 @@ public class Conexao {
 		try {
 			output.writeObject(chavePublica);
 			System.out.println("Chave Publica enviada...");
+			//System.out.println(chavePublica.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -96,7 +125,7 @@ public class Conexao {
 		try {
 			chavePublicaDestinatario = (PublicKey) input.readObject();
 			System.out.println("Chave Publica destinatario recebida com sucesso!");
-			System.out.println("Chave publica destinatario: " + chavePublicaDestinatario.toString());
+			//System.out.println("Chave publica destinatario: " + chavePublicaDestinatario.toString());
 		} catch (ClassNotFoundException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -127,5 +156,9 @@ public class Conexao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void printChavePublica(){
+		System.out.println(chavePublica.toString());
 	}
 }
