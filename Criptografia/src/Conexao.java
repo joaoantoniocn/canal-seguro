@@ -19,6 +19,8 @@ import javax.crypto.Cipher;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
+import sun.misc.BASE64Encoder;
+
 public class Conexao {
 
 	private static KeyPairGenerator assimetrica;
@@ -61,14 +63,16 @@ public class Conexao {
 	public static void init() {
 		try {
 			assimetrica = KeyPairGenerator.getInstance("RSA");
-			SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-			assimetrica.initialize(1024, random);
-		} catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+			BASE64Encoder b64 = new BASE64Encoder();
+			
+			assimetrica.initialize(1024, new SecureRandom());
+		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		chavePrivada = assimetrica.generateKeyPair().getPrivate();
 		chavePublica = assimetrica.generateKeyPair().getPublic();
+	
 		
 		System.out.println("Chaves publica e privadas criadas com sucesso!");
 	}
@@ -86,28 +90,14 @@ public class Conexao {
 	 */
 	public void enviarMensagem(String msg){
 		
-		byte[] msgBytes = null;
-		byte[] msgCriptografada = null;
 		
 		
-		AES abc = new AES();
-		abc.setPadding(new PKCS7Padding());
-		abc.setKey(chavePublicaDestinatario.getEncoded());
-		
-		try {
-			
-			msgBytes = msg.getBytes("UTF-8");
-			msgCriptografada = abc.encrypt(msgBytes);
-			Base64.encode(msgCriptografada);
-			
-			output.writeObject(new Package(msgCriptografada, msgBytes.length));
+		try {		
+			output.writeObject(criptografa(msg, chavePublicaDestinatario));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (DataLengthException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidCipherTextException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -115,7 +105,10 @@ public class Conexao {
 	
 	public String receberMensagem(){
 		try {
-			return (String) input.readObject();
+			
+			String msg = decriptografa( (byte[]) input.readObject(), chavePrivada);
+			
+			return msg;
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -183,7 +176,7 @@ public class Conexao {
 		}
 	}
 	
-	public void printChavePublica(){
+	public static void printChavePublica(){
 		System.out.println(chavePublica.toString());
 	}
 	
@@ -191,7 +184,7 @@ public class Conexao {
     /**
      * Criptografa o texto puro usando chave pública.
      */
-    public static byte[] criptografa(String texto, PublicKey chave) {
+    private byte[] criptografa(String texto, PublicKey chave) {
       byte[] cipherText = null;
       
       try {
@@ -209,7 +202,7 @@ public class Conexao {
     /**
      * Decriptografa o texto puro usando chave privada.
      */
-    public static String decriptografa(byte[] texto, PrivateKey chave) {
+    private String decriptografa(byte[] texto, PrivateKey chave) {
       byte[] dectyptedText = null;
       
       try {

@@ -55,15 +55,12 @@ public class Cliente {
 		// cliente
 		Conexao conexao = new Conexao("192.168.0.107", 5000);
 		
-		// servidor 
-		//Conexao conexao = new Conexao(5000);
 		Conexao.init();
+		
 		// cliente iniciando conexao
 		conexao.iniciarConexao();
 
-		// servidor esperando conexao
-		// conexao.esperarConexao();
-
+		
 		// ---
 		Scanner scanner = new Scanner(System.in);
 		String msg = "";
