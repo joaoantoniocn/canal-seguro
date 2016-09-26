@@ -4,6 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -70,8 +71,9 @@ public class Conexao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		chavePrivada = assimetrica.generateKeyPair().getPrivate();
-		chavePublica = assimetrica.generateKeyPair().getPublic();
+		KeyPair keyPair = assimetrica.generateKeyPair();
+		chavePrivada = keyPair.getPrivate();
+		chavePublica = keyPair.getPublic();
 	
 		
 		System.out.println("Chaves publica e privadas criadas com sucesso!");
@@ -89,15 +91,14 @@ public class Conexao {
 	 *  
 	 */
 	public void enviarMensagem(String msg){
+
 		
-		
-		
-		try {		
-			output.writeObject(criptografa(msg, chavePublicaDestinatario));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (DataLengthException e) {
+		try {
+					
+			byte[] msgCriptografada = criptografa(msg, chavePublicaDestinatario);
+
+			output.writeObject(msgCriptografada);
+		} catch (DataLengthException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -105,8 +106,10 @@ public class Conexao {
 	
 	public String receberMensagem(){
 		try {
-			
-			String msg = decriptografa( (byte[]) input.readObject(), chavePrivada);
+					    
+			byte[] msgBytes = (byte[]) input.readObject();
+					
+			String msg = decriptografa(msgBytes, chavePrivada);
 			
 			return msg;
 		} catch (ClassNotFoundException e) {
@@ -132,7 +135,7 @@ public class Conexao {
 		try {
 			output.writeObject(chavePublica);
 			System.out.println("Chave Publica enviada...");
-			//System.out.println(chavePublica.toString());
+			//System.out.println("minha chave publica: " + chavePublica.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -188,10 +191,11 @@ public class Conexao {
       byte[] cipherText = null;
       
       try {
-        final Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA");
         // Criptografa o texto puro usando a chave Púlica
         cipher.init(Cipher.ENCRYPT_MODE, chave);
         cipherText = cipher.doFinal(texto.getBytes());
+        
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -204,18 +208,20 @@ public class Conexao {
      */
     private String decriptografa(byte[] texto, PrivateKey chave) {
       byte[] dectyptedText = null;
-      
+      String result = "";
       try {
-        final Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA");
         // Decriptografa o texto puro usando a chave Privada
         cipher.init(Cipher.DECRYPT_MODE, chave);
         dectyptedText = cipher.doFinal(texto);
-   
+        
+        result = new String(dectyptedText);
+        
       } catch (Exception ex) {
         ex.printStackTrace();
       }
    
-      return new String(dectyptedText);
+      return result;
     }
 	
 	

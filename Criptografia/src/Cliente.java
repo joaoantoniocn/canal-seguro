@@ -53,7 +53,7 @@ public class Cliente {
 
 		// --- iniciando a conexao ---
 		// cliente
-		Conexao conexao = new Conexao("192.168.0.107", 5000);
+		Conexao conexao = new Conexao("localhost", 5000);
 		
 		Conexao.init();
 		

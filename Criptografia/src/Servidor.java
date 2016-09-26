@@ -30,8 +30,6 @@ public class Servidor {
 		while (!msg.equals("fechar")) {
 			resposta = conexao.receberMensagem();
 			
-			
-			
 			System.out.println("Cliente: " + resposta);
 			msg = scanner.nextLine();
 			

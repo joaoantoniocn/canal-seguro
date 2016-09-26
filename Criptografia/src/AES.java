@@ -75,8 +75,6 @@ public class AES {
 		    	AES abc = new AES();
 		    	abc.setPadding(new PKCS7Padding());
 		    	abc.setKey(sk.getEncoded());
-				
-		    
 		    	
 		    	byte[] ba = s.getBytes("UTF-8");
 		    
