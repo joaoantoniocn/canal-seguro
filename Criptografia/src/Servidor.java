@@ -1,24 +1,11 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.util.Scanner;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
-import org.bouncycastle.crypto.paddings.PKCS7Padding;
-
-import com.sun.corba.se.spi.activation.Repository;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
-
 public class Servidor {
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
- 
+	public static void main(String[] args) {
+
 		// --- iniciando a conexao ---
 		Conexao conexao = new Conexao(5000);
-		Conexao.init();
-		
+		conexao.init();
 
 		// servidor esperando conexao
 		conexao.esperarConexao();
@@ -29,14 +16,14 @@ public class Servidor {
 		String resposta = "";
 		while (!msg.equals("fechar")) {
 			resposta = conexao.receberMensagem();
-			
+
 			System.out.println("Cliente: " + resposta);
 			msg = scanner.nextLine();
-			
-			conexao.enviarMensagem(msg);
-			
-		}
 
+			conexao.enviarMensagem(msg);
+
+		}
+		scanner.close();
 		conexao.fecharConexao();
 
 	} // main
