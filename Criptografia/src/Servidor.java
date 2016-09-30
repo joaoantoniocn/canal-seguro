@@ -15,13 +15,23 @@ public class Servidor {
 		String msg = "";
 		String resposta = "";
 		while (!msg.equals("fechar")) {
-			resposta = conexao.receberMensagem();
-
+			//Recebe a mensagem pela rde
+			resposta = conexao.receiveMessage();
 			System.out.println("Cliente: " + resposta);
+
 			msg = scanner.nextLine();
 
-			conexao.enviarMensagem(msg);
+			// Gera Assinatura
+			byte[] signature = conexao.generateSignature(msg);
 
+			// Cria um Package para enviar
+			Package p = new Package(signature, msg.getBytes());
+
+			// Converte o Package em um array de bytes
+			byte[] data = Util.convertToByteArray(p);
+
+			// Envia a mensagem pela rede
+			conexao.sendMessage(data);
 		}
 		scanner.close();
 		conexao.fecharConexao();

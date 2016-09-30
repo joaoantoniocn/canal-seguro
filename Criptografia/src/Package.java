@@ -1,12 +1,30 @@
 import java.io.Serializable;
 
-@SuppressWarnings("serial")
-public class Package implements Serializable{
-	byte[] data;
-	int ba_lenght;
-	
-	public Package(byte[] data, int ba_length){
-		this.ba_lenght = ba_length;
+public class Package implements Serializable {
+
+	private static final long serialVersionUID = -916243193401875381L;
+	private byte[] signature;
+	private byte[] data;
+
+	public Package(byte[] signature, byte[] data) {
+		this.signature = signature;
 		this.data = data;
 	}
+
+	public byte[] getSignature() {
+		return signature;
+	}
+
+	public void setSignature(byte[] signature) {
+		this.signature = signature;
+	}
+
+	public byte[] getData() {
+		return data;
+	}
+
+	public void setData(byte[] data) {
+		this.data = data;
+	}
+
 }

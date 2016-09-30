@@ -10,8 +10,7 @@ public class Cliente {
 
 		// cliente iniciando conexao
 		conexao.iniciarConexao();
-		
-		System.out.println("PRONTO");
+
 		// ---
 		Scanner scanner = new Scanner(System.in);
 		String msg = "";
@@ -19,11 +18,24 @@ public class Cliente {
 		while (!msg.equals("fechar")) {
 			msg = scanner.nextLine();
 
-			conexao.enviarMensagem(msg);
-			resposta = conexao.receberMensagem();
-			
+			// Gera Assinatura
+			byte[] signature = conexao.generateSignature(msg);
+
+			// Cria um Package para enviar
+			Package p = new Package(signature, msg.getBytes());
+
+			// Converte o Package em um array de bytes
+			byte[] data = Util.convertToByteArray(p);
+
+			// Envia a mensagem pela rede
+			conexao.sendMessage(data);
+
+			// Recebe mensagem pela rede
+			resposta = conexao.receiveMessage();
+
 			System.out.println("Servidor: " + resposta);
 		}
+
 		scanner.close();
 		conexao.fecharConexao();
 	}

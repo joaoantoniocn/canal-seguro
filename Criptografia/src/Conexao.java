@@ -3,12 +3,17 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -19,9 +24,9 @@ import org.bouncycastle.crypto.DataLengthException;
 
 public class Conexao {
 
-	private static KeyPairGenerator assimetrica;
-	private static PrivateKey chavePrivada;
-	private static PublicKey chavePublica;
+	private KeyPairGenerator assimetrica;
+	private PrivateKey chavePrivada;
+	private PublicKey chavePublica;
 
 	private Socket client;
 	private ServerSocket server;
@@ -59,10 +64,15 @@ public class Conexao {
 	}
 
 	public void init() {
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
 		try {
-			assimetrica = KeyPairGenerator.getInstance("RSA");
+			assimetrica = KeyPairGenerator.getInstance("RSA", "BC");
 			assimetrica.initialize(1024, new SecureRandom());
 		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -81,6 +91,27 @@ public class Conexao {
 		receberChavePublicaDestinatario();
 
 		receberChaveSimetrica();
+	}
+
+	/**
+	 * Espera uma conexao, primeiro recebe a chave publica de quem ta tentando
+	 * se conectar e depois envia sua propria chave publica
+	 */
+	public void esperarConexao() {
+		receberChavePublicaDestinatario();
+		enviarChavePublica();
+
+		try {
+			KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
+			chaveSimetrica = keygenerator.generateKey();
+
+			System.out.println("Chave simetrica criada com sucesso!");
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		enviarChaveSimetrica();
 	}
 
 	public void enviarChaveSimetrica() {
@@ -106,57 +137,6 @@ public class Conexao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-
-	/**
-	 *  
-	 */
-	public void enviarMensagem(String msg) {
-		try {
-			byte[] msgCriptografada = criptografaSimetrica(msg);
-
-			output.writeObject(msgCriptografada);
-		} catch (DataLengthException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public String receberMensagem() {
-		try {
-			byte[] msgBytes = (byte[]) input.readObject();
-
-			String msg = decriptografaSimetrica(msgBytes);
-			return msg;
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return "Problema ao receber mensagem!";
-	}
-
-	/**
-	 * Espera uma conexao, primeiro recebe a chave publica de quem ta tentando
-	 * se conectar e depois envia sua propria chave publica
-	 */
-	public void esperarConexao() {
-		receberChavePublicaDestinatario();
-		enviarChavePublica();
-
-		try {
-			KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
-			chaveSimetrica = keygenerator.generateKey();
-
-			System.out.println("Chave simetrica criada com sucesso!");
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		enviarChaveSimetrica();
 	}
 
 	private void enviarChavePublica() {
@@ -190,7 +170,7 @@ public class Conexao {
 	}
 
 	/**
-	 * Criptografa o texto puro usando chave pública.
+	 * Criptografa o texto puro usando a chave pública.
 	 */
 	private byte[] criptografa(byte[] texto, PublicKey chave) {
 		byte[] cipherText = null;
@@ -208,14 +188,15 @@ public class Conexao {
 
 		return cipherText;
 	}
-	
+
 	/**
-	 * Decriptografa o texto puro usando chave privada.
+	 * Decriptografa o texto puro usando a chave privada.
 	 */
 	private byte[] decriptografa(byte[] texto, PrivateKey chave) {
 		byte[] dectyptedText = null;
 		try {
 			Cipher cipher = Cipher.getInstance("RSA");
+
 			// Decriptografa o texto puro usando a chave Privada
 			cipher.init(Cipher.DECRYPT_MODE, chave);
 			dectyptedText = cipher.doFinal(texto);
@@ -227,9 +208,9 @@ public class Conexao {
 	}
 
 	/**
-	 * Criptografa o texto puro usando chave simétrica.
+	 * Criptografa o texto puro usando a chave simétrica.
 	 */
-	private byte[] criptografaSimetrica(String texto) {
+	private byte[] criptografaSimetrica(byte[] data) {
 		byte[] cipherText = null;
 
 		try {
@@ -237,7 +218,7 @@ public class Conexao {
 
 			// Criptografa o texto puro usando a chave simétrica
 			cipher.init(Cipher.ENCRYPT_MODE, chaveSimetrica);
-			cipherText = cipher.doFinal(texto.getBytes());
+			cipherText = cipher.doFinal(data);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -247,27 +228,122 @@ public class Conexao {
 	}
 
 	/**
-	 * Decriptografa o texto puro usando chave simétrica.
+	 * Decriptografa o texto puro usando a chave simétrica.
 	 */
-	private String decriptografaSimetrica(byte[] texto) {
+	private byte[] decriptografaSimetrica(byte[] texto) {
 		byte[] decryptedText = null;
-		String result = "";
 		try {
 			Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
 
 			// Decriptografa o texto puro usando a chave simétrica
 			cipher.init(Cipher.DECRYPT_MODE, chaveSimetrica);
 			decryptedText = cipher.doFinal(texto);
-
-			result = new String(decryptedText);
-
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 
-		return result;
+		return decryptedText;
 	}
 
-	
+	public byte[] generateSignature(String mensagem) {
+		Signature sig = null;
+		byte[] signature = null;
+		try {
+			sig = Signature.getInstance("SHA1withRSA", "BC");
+
+			// Inicializando Obj Signature com a Chave Privada
+			sig.initSign(chavePrivada, new SecureRandom());
+
+			// Gerar assinatura
+			sig.update(mensagem.getBytes());
+
+			signature = sig.sign();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return signature;
+	}
+
+	public void sendMessage(byte[] data) {
+		try {
+			byte[] msgCriptografada = criptografaSimetrica(data);
+
+			output.writeObject(msgCriptografada);
+		} catch (DataLengthException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public String receiveMessage() {
+		try {
+			byte[] msgBytes = (byte[]) input.readObject();
+
+			byte[] data = decriptografaSimetrica(msgBytes);
+			Package p = Util.convertFromByteArray(data);
+
+			String msg = new String(p.getData());
+
+			if (this.verifySignature(msg, p.getSignature())) {
+				System.out.println("A Mensagem recebida foi assinada corretamente.");
+				return msg;
+			} else {
+				System.out.println("A Mensagem recebida NÃO pode ser validada.");
+			}
+
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return "Problema ao receber mensagem!";
+	}
+
+	private boolean verifySignature(String msg, byte[] signature) {
+		Signature clientSig;
+		try {
+			clientSig = Signature.getInstance("SHA1withRSA", "BC");
+			clientSig.initVerify(chavePublicaDestinatario);
+			clientSig.update(msg.getBytes());
+
+			if (clientSig.verify(signature)) {
+				return true; // Mensagem corretamente assinada
+			} else {
+				return false; // Mensagem não pode ser validada
+			}
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return false;
+	}
 
 }
