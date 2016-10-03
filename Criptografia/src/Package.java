@@ -5,10 +5,12 @@ public class Package implements Serializable {
 	private static final long serialVersionUID = -916243193401875381L;
 	private byte[] signature;
 	private byte[] data;
+	private int number;
 
-	public Package(byte[] signature, byte[] data) {
+	public Package(byte[] signature, byte[] data, int number) {
 		this.signature = signature;
 		this.data = data;
+		this.setNumber(number);
 	}
 
 	public byte[] getSignature() {
@@ -25,6 +27,14 @@ public class Package implements Serializable {
 
 	public void setData(byte[] data) {
 		this.data = data;
+	}
+
+	public int getNumber() {
+		return number;
+	}
+
+	public void setNumber(int number) {
+		this.number = number;
 	}
 
 }

@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Random;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -35,13 +36,13 @@ public class Conexao {
 
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-
+	private int msgCount;
 	public Conexao(String ip, int porta) {
 		try {
 			client = new Socket(ip, porta);
 			output = new ObjectOutputStream(client.getOutputStream());
 			input = new ObjectInputStream(client.getInputStream());
-
+			setMsgCount(new Random().nextInt());
 			System.out.println("Conexao estabelecida com sucesso!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -55,7 +56,7 @@ public class Conexao {
 			client = server.accept();
 			output = new ObjectOutputStream(client.getOutputStream());
 			input = new ObjectInputStream(client.getInputStream());
-
+			setMsgCount(new Random().nextInt());
 			System.out.println("Conexao estabelecida com sucesso!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -289,8 +290,9 @@ public class Conexao {
 		}
 
 	}
-
-	public String receiveMessage() {
+	
+	
+	public Package receiveMessage() {
 		try {
 			byte[] msgBytes = (byte[]) input.readObject();
 
@@ -301,7 +303,7 @@ public class Conexao {
 
 			if (this.verifySignature(msg, p.getSignature())) {
 				System.out.println("A Mensagem recebida foi assinada corretamente.");
-				return msg;
+				return p;
 			} else {
 				System.out.println("A Mensagem recebida NÃO pode ser validada.");
 			}
@@ -314,7 +316,7 @@ public class Conexao {
 			e.printStackTrace();
 		}
 
-		return "Problema ao receber mensagem!";
+		return null;
 	}
 
 	private boolean verifySignature(String msg, byte[] signature) {
@@ -344,6 +346,14 @@ public class Conexao {
 		}
 
 		return false;
+	}
+
+	public int getMsgCount() {
+		return msgCount;
+	}
+
+	public void setMsgCount(int msgCount) {
+		this.msgCount = msgCount;
 	}
 
 }
