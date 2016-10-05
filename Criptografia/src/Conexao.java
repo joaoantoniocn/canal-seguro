@@ -19,6 +19,7 @@ import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.DataLengthException;
@@ -37,6 +38,7 @@ public class Conexao {
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private int msgCount;
+
 	public Conexao(String ip, int porta) {
 		try {
 			client = new Socket(ip, porta);
@@ -103,7 +105,7 @@ public class Conexao {
 		enviarChavePublica();
 
 		try {
-			KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
+			KeyGenerator keygenerator = KeyGenerator.getInstance("AES");
 			chaveSimetrica = keygenerator.generateKey();
 
 			System.out.println("Chave simetrica criada com sucesso!");
@@ -132,7 +134,7 @@ public class Conexao {
 			byte[] ba = (byte[]) input.readObject();
 			byte[] decryptedText = decriptografa(ba, chavePrivada);
 
-			chaveSimetrica = new SecretKeySpec(decryptedText, 0, decryptedText.length, "DES");
+			chaveSimetrica = new SecretKeySpec(decryptedText, 0, decryptedText.length, "AES");
 			System.out.println("Chave simétrica destinatario recebida com sucesso!");
 		} catch (ClassNotFoundException | IOException e) {
 			// TODO Auto-generated catch block
@@ -212,33 +214,53 @@ public class Conexao {
 	 * Criptografa o texto puro usando a chave simétrica.
 	 */
 	private byte[] criptografaSimetrica(byte[] data) {
-		byte[] cipherText = null;
-
+		byte[] encryptedIVAndText = null;
 		try {
-			Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
 
+			// Gera o vetor inicial		
+			byte[] iv = new byte[cipher.getBlockSize()];
+			SecureRandom random = new SecureRandom();
+			random.nextBytes(iv);
+			IvParameterSpec ivParameter = new IvParameterSpec(iv);
+			
 			// Criptografa o texto puro usando a chave simétrica
-			cipher.init(Cipher.ENCRYPT_MODE, chaveSimetrica);
-			cipherText = cipher.doFinal(data);
+			cipher.init(Cipher.ENCRYPT_MODE, chaveSimetrica, ivParameter);
+			byte[] cipherText = cipher.doFinal(data);
+			
+			// Combina o vetor inicial com o texto criptografado
+			encryptedIVAndText = new byte[cipher.getBlockSize() + cipherText.length];
+			System.arraycopy(iv, 0, encryptedIVAndText, 0, cipher.getBlockSize());
+			System.arraycopy(cipherText, 0, encryptedIVAndText, cipher.getBlockSize(), cipherText.length);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return cipherText;
+		return encryptedIVAndText;
 	}
 
 	/**
 	 * Decriptografa o texto puro usando a chave simétrica.
 	 */
-	private byte[] decriptografaSimetrica(byte[] texto) {
+	private byte[] decriptografaSimetrica(byte[] encryptedIvTextBytes) {
 		byte[] decryptedText = null;
 		try {
-			Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");			
+			
+			// Extrai o IV.
+			byte[] iv = new byte[cipher.getBlockSize()];
+			System.arraycopy(encryptedIvTextBytes, 0, iv, 0, iv.length);
+			IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
 
-			// Decriptografa o texto puro usando a chave simétrica
-			cipher.init(Cipher.DECRYPT_MODE, chaveSimetrica);
-			decryptedText = cipher.doFinal(texto);
+			// Extrai a mensagem criptografada
+			int encryptedSize = encryptedIvTextBytes.length - cipher.getBlockSize();
+			byte[] encryptedBytes = new byte[encryptedSize];
+			System.arraycopy(encryptedIvTextBytes, cipher.getBlockSize(), encryptedBytes, 0, encryptedSize);
+			
+			// Decrypt	
+			cipher.init(Cipher.DECRYPT_MODE, chaveSimetrica, ivParameterSpec);
+			decryptedText = cipher.doFinal(encryptedBytes);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -290,8 +312,7 @@ public class Conexao {
 		}
 
 	}
-	
-	
+
 	public Package receiveMessage() {
 		try {
 			byte[] msgBytes = (byte[]) input.readObject();

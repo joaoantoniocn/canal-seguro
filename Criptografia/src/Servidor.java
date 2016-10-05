@@ -2,11 +2,13 @@ import java.util.Scanner;
 
 public class Servidor {
 	public static void main(String[] args) {
-
+		System.out.println("<< SERVIDOR >>");
+		
 		// --- iniciando a conexao ---
 		Conexao conexao = new Conexao(5000);
 		conexao.init();
 		int natual =10;
+		
 		// servidor esperando conexao
 		conexao.esperarConexao();
 
